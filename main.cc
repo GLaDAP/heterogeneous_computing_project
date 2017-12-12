@@ -81,7 +81,8 @@ int check_image(unsigned char *image_data, int num_channels) {
 /* Process the entire image. Return true on success, false on failure. */
 int process_image(char *file_in, char *file_out) {
     int width, height, num_channels;
-    unsigned char *image_data = stbi_load(file_in, &width, &height, &num_channels, NUM_CHANNELS_RGB);
+    unsigned char *image_data = stbi_load(file_in, &width, &height,
+                                          &num_channels, NUM_CHANNELS_RGB);
 
     /* We stop processing if the image is invalid or we don't get the
     specific amount of channels we want. */
@@ -91,14 +92,14 @@ int process_image(char *file_in, char *file_out) {
     int num_pixels = width * height;
 
     /* Apply filter 1 and swap the newly acquired image data. */
-    unsigned char *temp_image_data = filter_greyscale(image_data, num_pixels);
+    unsigned char *temp_image_data = filter_greyscale_cuda(image_data, num_pixels);
     stbi_image_free(image_data);
     image_data = temp_image_data;
 
     /* Apply filter 2. */
-    filter_contrast(image_data, num_pixels);
+    filter_contrast_cuda(image_data, num_pixels);
     /* Apply filter 3. */
-    filter_smoothing(image_data, num_pixels, width, height);
+    // filter_smoothing(image_data, num_pixels, width, height);
 
     stbi_write_png(file_out, width, height, NUM_CHANNELS_GREYSCALE, image_data, PNG_STRIDE_DEFAULT);
     stbi_image_free(image_data);

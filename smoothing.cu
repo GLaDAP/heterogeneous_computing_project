@@ -14,19 +14,6 @@
 
 using namespace std;
 
-/* Image input/output settings. */
-#define PNG_STRIDE_DEFAULT 0
-#define NUM_CHANNELS_RGB 3
-#define NUM_CHANNELS_GREYSCALE 1
-
-/* Greyscale component weighting factors. */
-#define GREYSCALE_R 0.2126
-#define GREYSCALE_G 0.7152
-#define GREYSCALE_B 0.0722
-
-/* The maximum value we can use as RGB component. */
-#define RGB_MAX_VALUE 255
-
 /* Kernel dimension values. */
 #define KERNEL_WIDTH 5
 #define KERNEL_OFFSET KERNEL_WIDTH / 2
@@ -43,8 +30,13 @@ const int kernel[KERNEL_WIDTH][KERNEL_WIDTH] = {{1, 2, 3, 2, 1},
 /* Perform a triangular smoothing filter on an image. */
 void filter_smoothing(unsigned char *image_data, int num_pixels, int width, int height) {
     unsigned char *temp_image_data = (unsigned char *) malloc(num_pixels);
+    if (temp_image_data == NULL) {
+        cout << "Could not allocate memory in smoothin function." << endl;
+        exit(1);
+    }
     memcpy(temp_image_data, image_data, num_pixels);
 
+    /* OpenMP since the IF-statement is too complex */
     for(int i = 0; i < num_pixels; i++) {
         int col = i % width;
         int row = i / width;
