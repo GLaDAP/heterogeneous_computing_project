@@ -29,11 +29,13 @@ EACH FUNCTION IN PARALLEL HAS THE WHOLE IMAGE IN THEIR MEMORY TO DO THE COMPUTAT
 #include <stdlib.h>
 #include <iostream>
 #include "timer.h"
+#include "cuda_helper.h"
 
 using namespace std;
 
 /* Kernel dimension values. */
 #define KERNEL_WIDTH 5
+#define KERNEL_SIZE KERNEL_WIDTH * KERNEL_WIDTH
 #define KERNEL_OFFSET KERNEL_WIDTH / 2
 #define KERNEL_MULTIPLIER (1.0 / 81.0)
 
@@ -43,18 +45,6 @@ const int kernel_1D[KERNEL_WIDTH * KERNEL_WIDTH] = {1, 2, 3, 2, 1,
                                                     3, 6, 9, 6, 3,
                                                     2, 4, 6, 4, 2,
                                                     1, 2, 3, 2, 1};
-/* Utility function, use to do error checking.
- * Use this function like this:
- * checkCudaCall(cudaMalloc((void **) &deviceRGB, imgS * sizeof(color_t)));
- * And to check the result of a kernel invocation:
- * checkCudaCall(cudaGetLastError());
- */
-static void checkCudaCall(cudaError_t result) {
-    if (result != cudaSuccess) {
-        cerr << "cuda error: " << cudaGetErrorString(result) << endl;
-        exit(1);
-    }
-}
 
 /* Smoothing filter kernel. */
 __global__ void smoothing_kernel(unsigned char* image_data,
@@ -69,7 +59,7 @@ __global__ void smoothing_kernel(unsigned char* image_data,
     if(!(row < KERNEL_OFFSET || col < KERNEL_OFFSET ||
          row > (height - KERNEL_OFFSET) || col > (width - KERNEL_OFFSET))) {
         int accumulator = 0;
-        for (int kernel_index = 0; kernel_index < 25; kernel_index++) {
+        for (int kernel_index = 0; kernel_index < KERNEL_SIZE; kernel_index++) {
             int kx = (kernel_index % KERNEL_WIDTH);
             int ky = (kernel_index / KERNEL_WIDTH);
 
@@ -83,48 +73,24 @@ __global__ void smoothing_kernel(unsigned char* image_data,
 
 /* Allocates the necessary memory on the GPU and executes the CUDA-kernel.  */
 void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
-                             int width, int height) {
+                             int width, int height, int max_index) {
 
     int thread_block_size = 512;
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
     /* Allocate the image used to calculate the smoothing. */
-    unsigned char* device_image = NULL;
-    checkCudaCall(cudaMalloc((void **) &device_image, \
-                  num_pixels * sizeof(unsigned char)));
-    if (device_image == NULL) {
-        cout << "could not allocate memory on the GPU." << endl;
-        exit(1);
-    }
 
-    unsigned char* device_temp_image = NULL;
-    checkCudaCall(cudaMalloc((void **) &device_temp_image, \
-                  num_pixels * sizeof(unsigned char)));
-    if (device_temp_image == NULL) {
-        cout << "could not allocate memory on the GPU." << endl;
-        exit(1);
-    }
+    unsigned char* device_image = (unsigned char*) allocateDeviceMemory( \
+        num_pixels * sizeof (unsigned char));
+    unsigned char* device_temp_image = (unsigned char*) allocateDeviceMemory( \
+        num_pixels * sizeof (unsigned char));
 
-    int* device_kernel_array = NULL;
-    checkCudaCall(cudaMalloc((void **) &device_kernel_array, \
-                  KERNEL_WIDTH * KERNEL_WIDTH * sizeof(int)));
-    if (device_kernel_array == NULL) {
-        cout << "could not allocate memory on the GPU." << endl;
-        exit(1);
-    }
-
+    int* device_kernel_array = (int*) allocateDeviceMemory(KERNEL_SIZE * sizeof (int));
 
     memoryTime.start();
-    checkCudaCall(cudaMemcpy(device_kernel_array, kernel_1D, \
-                            25 * sizeof(int), \
-                            cudaMemcpyHostToDevice));
-
-    checkCudaCall(cudaMemcpy(device_image, image_data, \
-                            num_pixels * sizeof(unsigned char), \
-                            cudaMemcpyHostToDevice));
-    checkCudaCall(cudaMemcpy(device_temp_image, device_image, \
-                            num_pixels * sizeof(unsigned char), \
-                            cudaMemcpyDeviceToDevice));
+    memcpyHostToDevice(device_kernel_array, (int*) kernel_1D, KERNEL_SIZE * sizeof (int));
+    memcpyHostToDevice(device_image, image_data, num_pixels * sizeof(unsigned char));
+    memcpyHostToDevice(device_temp_image, device_image, num_pixels * sizeof(unsigned char));
     memoryTime.stop();
 
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
@@ -134,18 +100,16 @@ void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
      */
     kernelTime1.start();
     smoothing_kernel<<<num_blocks, thread_block_size>>> \
-        (device_image, device_temp_image, device_kernel_array, num_pixels, width, height);
+        (device_image, device_temp_image, device_kernel_array, max_index, width, height);
     kernelTime1.stop();
 
     checkCudaCall(cudaGetLastError());
 
     memoryTime.start();
-    checkCudaCall(cudaMemcpy(image_data, device_image, \
-                             num_pixels * sizeof(unsigned char), \
-                             cudaMemcpyDeviceToHost));
+    memcpyDeviceToHost(image_data, device_image, num_pixels * sizeof(unsigned char));
     memoryTime.stop();
-    checkCudaCall(cudaFree(device_image));
-    checkCudaCall(cudaFree(device_kernel_array));
+    freeDeviceMemory(device_image);
+    freeDeviceMemory(device_kernel_array);
 
     cout << fixed << setprecision(6);
     cout << "smoothing (kernel): \t\t" << kernelTime1.getElapsed() \
