@@ -12,7 +12,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>
-#include "timer.h"
+// #include "timer.h"
+// #include "contrast.h"
 
 using namespace std;
 
@@ -31,31 +32,6 @@ static void checkCudaCall(cudaError_t result) {
     }
 }
 
-/* Perform a contrast filter on an image. */
-void filter_contrast(unsigned char *image_data, int num_pixels) {
-    long brightness_sum = 0;
-
-    /* CUDA Reduction or OpenMP. */
-    for(int i = 0; i < num_pixels; i++) {
-        brightness_sum += image_data[i];
-    }
-    cout << brightness_sum << endl;
-
-    float brightness_mean = (double) brightness_sum / (double) num_pixels;
-    float denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
-
-    /* CUDA */
-    for(int i = 0; i < num_pixels; i++) {
-        int contrast_value = 0;
-
-        if(image_data[i] >= brightness_mean) {
-            contrast_value = (sqrt(image_data[i] - brightness_mean)
-                              / denominator * RGB_MAX_VALUE);
-        }
-
-        image_data[i] = contrast_value;
-    }
-}
 
 __global__ void brightness_reduction_kernel(unsigned char *data, int size, int* result) {
     int sum = 0;
@@ -88,10 +64,10 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size, int* 
 
 /* Compare with a OpenMP implementation? */
 __global__ void filter_contrast_kernel(unsigned char *image_data,
-    int size, float mean, float denominator) {
-        unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x);
-        if(index < size){
-
+                                       int size, float mean,
+                                       float denominator) {
+    unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x);
+    if(index < size) {
         if(image_data[index] >= mean) {
             image_data[index] = (sqrt(image_data[index] - mean)
                               / denominator * RGB_MAX_VALUE);
@@ -121,30 +97,33 @@ void filter_contrast_cuda(unsigned char *image_data, int num_pixels) {
         exit(1);
     }
     int zero[] = {0};
-    checkCudaCall(cudaMemcpy(device_brightness_sum, &zero, sizeof (int),
-                         cudaMemcpyHostToDevice));
     /* Initialize the timers used to measure the kernel invocation time and
      * memory transfer time.
      */
-    timer kernelTime1 = timer("kernelTime");
-    timer memoryTime = timer("memoryTime");
+    // timer kernelTime1 = timer("kernelTime");
+    // timer memoryTime = timer("memoryTime");
+    checkCudaCall(cudaMemcpy(device_brightness_sum, &zero, sizeof (int),
+                         cudaMemcpyHostToDevice));
 
-    memoryTime.start();
+
+    // memoryTime.start();
     checkCudaCall(cudaMemcpy(device_image, image_data, \
                             num_pixels * sizeof(unsigned char), \
                              cudaMemcpyHostToDevice));
-    memoryTime.stop();
+    // memoryTime.stop();
+
+
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
-    kernelTime1.start();
+    // kernelTime1.start();
     brightness_reduction_kernel<<<num_blocks, thread_block_size>>> \
         (device_image, num_pixels, device_brightness_sum);
     cudaDeviceSynchronize();
-    kernelTime1.stop();
+    // kernelTime1.stop();
     checkCudaCall(cudaGetLastError());
-    memoryTime.start();
+    // memoryTime.start();
     checkCudaCall(cudaMemcpy(&brightness_sum, device_brightness_sum, sizeof (int),
                              cudaMemcpyDeviceToHost));
-    memoryTime.stop();
+    // memoryTime.stop();
 
     /* And now the contrast */
     float brightness_mean = (double) brightness_sum / (double) num_pixels;
@@ -160,27 +139,27 @@ void filter_contrast_cuda(unsigned char *image_data, int num_pixels) {
     //
     //     image_data[i] = contrast_value;
     // }
-    kernelTime1.start();
+    // kernelTime1.start();
     filter_contrast_kernel<<<num_blocks, thread_block_size>>> \
         (device_image, num_pixels, brightness_mean, denominator);
         cudaDeviceSynchronize();
 
-        kernelTime1.stop();
+        // kernelTime1.stop();
         checkCudaCall(cudaGetLastError());
 
     /* Copy the result image back to the GPU. */
-    memoryTime.start();
+    // memoryTime.start();
     checkCudaCall(cudaMemcpy(image_data, device_image, \
                              num_pixels * sizeof(unsigned char), \
                              cudaMemcpyDeviceToHost));
-    memoryTime.stop();
+    // memoryTime.stop();
 
     /* Free used memory on the GPU. */
     checkCudaCall(cudaFree(device_image));
     checkCudaCall(cudaFree(device_brightness_sum));
-    cout << fixed << setprecision(6);
-    cout << "filter (kernel): \t\t" << kernelTime1.getElapsed() \
-         << " seconds." << endl;
-    cout << "filter (memory): \t\t" << memoryTime.getElapsed() \
+    // cout << fixed << setprecision(6);
+    // cout << "filter (kernel): \t\t" << kernelTime1.getElapsed() \
+          << " seconds." << endl;
+    // cout << "filter (memory): \t\t" << memoryTime.getElapsed() \
          << " seconds." << endl;
 }

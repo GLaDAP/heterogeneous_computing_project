@@ -27,30 +27,6 @@ static void checkCudaCall(cudaError_t result) {
     }
 }
 
-/* Perform a greyscale filter on an image. Return a new image data array
-containing only 1 color channel. */
-unsigned char *filter_greyscale(unsigned char *image_data, int num_pixels) {
-
-    unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
-                                  * sizeof(unsigned char));
-    if (new_image_data == NULL) {
-        cout << "Could not allocate memory" << endl;
-        return NULL;
-    }
-    int total_size = num_pixels * NUM_CHANNELS_RGB;
-
-    /* CUDA */
-    for(int i = 0, j = 0; i < total_size; i += NUM_CHANNELS_RGB, j++) {
-        int greyscale_value = (image_data[i] * GREYSCALE_R
-                               + image_data[i + 1] * GREYSCALE_G
-                               + image_data[i + 2] * GREYSCALE_B);
-
-        new_image_data[j] = greyscale_value;
-    }
-
-    return new_image_data;
-}
-
 /* Kernel converting the image to greyscale. */
 __global__ void greyscale_kernel(unsigned char* image_data, \
                                unsigned char* device_result, int size) {
@@ -102,39 +78,39 @@ unsigned char* filter_greyscale_cuda(unsigned char *image_data, int num_pixels) 
     /* Initialize the timers used to measure the kernel invocation time and
      * memory transfer time.
      */
-    timer kernelTime1 = timer("kernelTime");
-    timer memoryTime = timer("memoryTime");
+    // timer kernelTime1 = timer("kernelTime");
+    // timer memoryTime = timer("memoryTime");
 
-    memoryTime.start();
+    // memoryTime.start();
     checkCudaCall(cudaMemcpy(device_image_data, image_data, \
                             total_size * sizeof(unsigned char), \
                              cudaMemcpyHostToDevice));
-    memoryTime.stop();
+    // memoryTime.stop();
 
     /* Start calculation on the GPU. */
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
-    kernelTime1.start();
+    // kernelTime1.start();
     greyscale_kernel<<<num_blocks, thread_block_size>>> \
         (device_image_data, device_new_image, total_size);
     cudaDeviceSynchronize();
-    kernelTime1.stop();
+    // kernelTime1.stop();
     checkCudaCall(cudaGetLastError());
 
     /* Copy the result image back to the GPU. */
-    memoryTime.start();
+    // memoryTime.start();
     checkCudaCall(cudaMemcpy(new_image_data, device_new_image, \
                              num_pixels * sizeof(unsigned char), \
                              cudaMemcpyDeviceToHost));
-    memoryTime.stop();
+    // memoryTime.stop();
 
     /* Free used memory on the GPU. */
     checkCudaCall(cudaFree(device_new_image));
     checkCudaCall(cudaFree(device_image_data));
 
-    cout << fixed << setprecision(6);
-    cout << "Greyscale (kernel): \t\t" << kernelTime1.getElapsed() \
+    // cout << fixed << setprecision(6);
+    // cout << "Greyscale (kernel): \t\t" << kernelTime1.getElapsed() \
          << " seconds." << endl;
-    cout << "Greyscale (memory): \t\t" << memoryTime.getElapsed() \
+    // cout << "Greyscale (memory): \t\t" << memoryTime.getElapsed() \
          << " seconds." << endl;
 
     return new_image_data;
