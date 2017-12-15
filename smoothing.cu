@@ -1,29 +1,11 @@
 /*
- * File: smoothing.cu
+ * File: smoothingomp.cc
  * Assignment: 5
  * Students: Teun Mathijssen, David Puroja
  * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
  * Studentnumber: 11320788, 10469036
  *
- * Description: This file contains sequential implementations of different
- * image processing functions.
-
-NOTE: THE NUM-PIXEL MUST BE SEPARATED BY A PERCENTAGE SO THE CPU AND GPU CAN
-CONDUCT THE SAME CALCULATION IN PARALLEL. RESEARCH: FIND THE SWEETSPOT/PERCENTAGE
-WHERE THE GPU AND CPU HETEROGENOUOS COMPUTATION IS OPTIMAL.
-
-DO THIS FOR ALL THE FUNCTIONS BY CONVERTING THE SEQUENTIAL VERSION TO AN
-OPENMP VERSION AND A CUDA VERSION WITH PERCENTAGE.
-
-THE ARRAYS WITH THE PIXELS CAN BE MERGED LATER SINCE THE CUT-OFF POINT OF THE
-ARRAY IS KNOWN. (USE MEMCPY TO PERFORM THE OPERATION)
-
-EACH FUNCTION IN PARALLEL HAS THE WHOLE IMAGE IN THEIR MEMORY TO DO THE COMPUTATION.
-
-
-
-
-
+ * Description: Applies the smoothing filter on the image using CUDA.
  */
 #include <stdbool.h>
 #include <stdlib.h>
@@ -50,13 +32,13 @@ const int kernel_1D[KERNEL_WIDTH * KERNEL_WIDTH] = {1, 2, 3, 2, 1,
 __global__ void smoothing_kernel(unsigned char* image_data,
                                  unsigned char* temp_image_data, int* kernel,
                                  int num_pixels, int width, int height) {
-
+    /* Calculate thread index. */
     unsigned int i = (blockIdx.x * blockDim.x + threadIdx.x);
     int col = i % width;
     int row = i / width;
 
     /* Boundary check for the current kernel center. */
-    if(!(row < KERNEL_OFFSET || col < KERNEL_OFFSET ||
+    if(i < num_pixels && !(row < KERNEL_OFFSET || col < KERNEL_OFFSET ||
          row > (height - KERNEL_OFFSET) || col > (width - KERNEL_OFFSET))) {
         int accumulator = 0;
         for (int kernel_index = 0; kernel_index < KERNEL_SIZE; kernel_index++) {
@@ -64,7 +46,8 @@ __global__ void smoothing_kernel(unsigned char* image_data,
             int ky = (kernel_index / KERNEL_WIDTH);
 
             int index = i + (kx - KERNEL_OFFSET) + width * (ky - KERNEL_OFFSET);
-            accumulator += (kernel[ky*KERNEL_WIDTH+kx] * temp_image_data[index]);
+            accumulator += (kernel[ky * KERNEL_WIDTH + kx] \
+                            * temp_image_data[index]);
         }
         accumulator *= KERNEL_MULTIPLIER;
         image_data[i] = accumulator;
@@ -73,9 +56,9 @@ __global__ void smoothing_kernel(unsigned char* image_data,
 
 /* Allocates the necessary memory on the GPU and executes the CUDA-kernel.  */
 void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
-                             int width, int height, int max_index) {
+                             int width, int height, int max_index,
+                             int thread_block_size) {
 
-    int thread_block_size = 512;
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
     /* Allocate the image used to calculate the smoothing. */
@@ -85,12 +68,17 @@ void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
     unsigned char* device_temp_image = (unsigned char*) allocateDeviceMemory( \
         num_pixels * sizeof (unsigned char));
 
-    int* device_kernel_array = (int*) allocateDeviceMemory(KERNEL_SIZE * sizeof (int));
+    int* device_kernel_array = (int*) allocateDeviceMemory( \
+        KERNEL_SIZE * sizeof (int));
 
+    /* Copy the data to the device. */
     memoryTime.start();
-    memcpyHostToDevice(device_kernel_array, (int*) kernel_1D, KERNEL_SIZE * sizeof (int));
-    memcpyHostToDevice(device_image, image_data, num_pixels * sizeof(unsigned char));
-    memcpyHostToDevice(device_temp_image, device_image, num_pixels * sizeof(unsigned char));
+    memcpyHostToDevice(device_kernel_array, (int*) kernel_1D, \
+                       KERNEL_SIZE * sizeof (int));
+    memcpyHostToDevice(device_image, image_data, \
+                       num_pixels * sizeof (unsigned char));
+    memcpyDeviceToDevice(device_temp_image, device_image, \
+                         num_pixels * sizeof (unsigned char));
     memoryTime.stop();
 
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
@@ -100,14 +88,20 @@ void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
      */
     kernelTime1.start();
     smoothing_kernel<<<num_blocks, thread_block_size>>> \
-        (device_image, device_temp_image, device_kernel_array, max_index, width, height);
+        (device_image, device_temp_image, device_kernel_array, max_index, \
+         width, height);
     kernelTime1.stop();
 
     checkCudaCall(cudaGetLastError());
 
+    /* Copy the result back to the host. Only the pixels actually calculated
+     * by the GPU are copied back.
+     */
     memoryTime.start();
-    memcpyDeviceToHost(image_data, device_image, num_pixels * sizeof(unsigned char));
+    memcpyDeviceToHost(image_data, device_image,
+                       max_index * sizeof (unsigned char));
     memoryTime.stop();
+
     freeDeviceMemory(device_image);
     freeDeviceMemory(device_kernel_array);
 

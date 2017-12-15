@@ -1,3 +1,13 @@
+/*
+ * File: timer.h
+ * Assignment: 5
+ * Students: Teun Mathijssen, David Puroja
+ * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Studentnumber: 11320788, 10469036
+ *
+ * Description: File containing functions to create and administer timers.
+ *              Code from UvA Concurrency and parallel programming framework 4.
+ */
 #pragma once
 
 

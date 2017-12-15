@@ -1,6 +1,12 @@
 /*
- * file: brightness.cu
+ * File: brightness.cu
+ * Assignment: 5
+ * Students: Teun Mathijssen, David Puroja
+ * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Studentnumber: 11320788, 10469036
  *
+ * Description: Calculates the sum of brightness of the image using CUDA
+ *              reduction. Returns the sum of the brightness.
  */
 #include <stdbool.h>
 #include <stdlib.h>
@@ -9,7 +15,6 @@
 #include "cuda_helper.h"
 
 using namespace std;
-
 
 
 __global__ void brightness_reduction_kernel(unsigned char *data, int size,
@@ -42,8 +47,8 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
     }
 }
 
-int calculate_brightness_cuda(unsigned char *device_image, int num_pixels) {
-    int thread_block_size = 512;
+int calculate_brightness_cuda(unsigned char *device_image, int num_pixels,
+                              int thread_block_size) {
 
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
