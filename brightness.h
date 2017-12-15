@@ -8,5 +8,6 @@
  * Description: Calculates the sum of brightness of the image using
  *              reduction. Returns the sum of the brightness.
  */
-int calculate_brightness_cuda(unsigned char *device_image, int num_pixels,
-                              int thread_block_size);
+unsigned long long int calculate_brightness_cuda(unsigned char *device_image,
+                                                 int num_pixels,
+                                                 int thread_block_size);

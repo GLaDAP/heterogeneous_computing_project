@@ -18,8 +18,8 @@ using namespace std;
 
 
 __global__ void brightness_reduction_kernel(unsigned char *data, int size,
-                                            int* result) {
-    int sum = 0;
+                                            unsigned long long int* result) {
+    unsigned long long int sum = 0;
     unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
 
     for(unsigned int i = index; i < index + 4 && i < size; i++) {
@@ -34,7 +34,7 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
     }
 
     /* Add all the sums of the warps within the block to one variable. */
-    __shared__ int block_sum;
+    __shared__ unsigned long long int block_sum;
     block_sum = 0;
     __syncthreads();
     if (threadIdx.x % 32 == 0) {
@@ -47,20 +47,23 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
     }
 }
 
-int calculate_brightness_cuda(unsigned char *device_image, int num_pixels,
-                              int thread_block_size) {
+unsigned long long int calculate_brightness_cuda(unsigned char *device_image,
+                                                 int num_pixels,
+                                                 int thread_block_size) {
 
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
 
-    int brightness_sum;
-    int* device_brightness_sum = (int*) allocateDeviceMemory(sizeof (int));
-    int zero[] = {0};
+    unsigned long long int brightness_sum;
+    unsigned long long int* device_brightness_sum = (unsigned long long int*) \
+        allocateDeviceMemory(sizeof (unsigned long long int));
+    unsigned long long int zero[] = {0};
     /* Initialize the timers used to measure the kernel invocation time and
      * memory transfer time.
      */
     memoryTime.start();
-    memcpyHostToDevice(device_brightness_sum, &zero, sizeof (int));
+    memcpyHostToDevice(device_brightness_sum, &zero,
+                       sizeof (unsigned long long int));
     memoryTime.stop();
 
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
@@ -72,9 +75,10 @@ int calculate_brightness_cuda(unsigned char *device_image, int num_pixels,
     checkCudaCall(cudaGetLastError());
 
     memoryTime.start();
-    memcpyDeviceToHost(&brightness_sum, device_brightness_sum, sizeof (int));
+    memcpyDeviceToHost(&brightness_sum, device_brightness_sum,
+                       sizeof (unsigned long long int));
     memoryTime.stop();
-
+    cout << "Brightness cuda: " << brightness_sum << endl;
     freeDeviceMemory(device_brightness_sum);
     cout << fixed << setprecision(6);
     cout << "brightness (kernel): \t\t" << kernelTime1.getElapsed() \

@@ -23,7 +23,7 @@ using namespace std;
  * new value using the mean and denominator of the brightness sum.
  */
 __global__ void filter_contrast_kernel(unsigned char *image_data, int size,
-                                       float mean, float denominator) {
+                                       double mean, double denominator) {
     unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x);
     if(index < size) {
         if(image_data[index] >= mean) {
@@ -49,13 +49,13 @@ void filter_contrast_cuda(unsigned char *image_data, int num_pixels,
     memcpyHostToDevice(device_image, image_data, \
                        num_pixels * sizeof(unsigned char));
 
-    int brightness_sum = calculate_brightness_cuda(device_image, num_pixels, \
+    unsigned long long int brightness_sum = calculate_brightness_cuda(device_image, num_pixels, \
                                                    thread_block_size);
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
 
     /* And now the contrast */
-    float brightness_mean = (double) brightness_sum / (double) num_pixels;
-    float denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
+    double brightness_mean = (double) (brightness_sum / (double) num_pixels);
+    double denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
 
     kernelTime1.start();
     filter_contrast_kernel<<<num_blocks, thread_block_size>>> \
