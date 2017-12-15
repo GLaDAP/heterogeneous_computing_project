@@ -1,10 +1,12 @@
 /*
- * file: cuda_helper.cu
+ * File: cuda_helper.cu
+ * Assignment: 5
+ * Students: Teun Mathijssen, David Puroja
+ * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Studentnumber: 11320788, 10469036
  *
- * DESCRIPTION: File containing cuda-functions to allocate arrays and cleanup
- *              those arrays.
- *
- *
+ * Description: File containing functions used to allocate, copy and free
+ *              device memory and to check is a call is succesful.
  */
 #include <iostream>
 
@@ -37,16 +39,19 @@ void* allocateDeviceMemory(unsigned int size) {
     }
 }
 
+/* Copies memory on the device to another memory adress on the device. */
 void memcpyDeviceToDevice(void* target, void* source, unsigned int size) {
     checkCudaCall(cudaMemcpy(target, source, size, \
         cudaMemcpyDeviceToDevice));
 }
 
+/* Copies memory on the host to a memory adress on the device. */
 void memcpyHostToDevice(void* target, void* source, unsigned int size) {
     checkCudaCall(cudaMemcpy(target, source, size, \
         cudaMemcpyHostToDevice));
 }
 
+/* Copies memory on the device to the host. */
 void memcpyDeviceToHost(void* target, void* source, unsigned int size) {
     checkCudaCall(cudaMemcpy(target, source, size, \
         cudaMemcpyDeviceToHost));

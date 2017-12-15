@@ -1,3 +1,12 @@
+/*
+ * File: greyscale.cu
+ * Assignment: 5
+ * Students: Teun Mathijssen, David Puroja
+ * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Studentnumber: 11320788, 10469036
+ *
+ * Description: Applies the greyscale filter on the image using CUDA.
+ */
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>
@@ -30,10 +39,9 @@ __global__ void greyscale_kernel(unsigned char* image_data, \
     }
 }
 
-
-unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels, int max_index) {
-
-    int thread_block_size = 512;
+/**/
+unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
+                                      int max_index, int thread_block_size) {
     /* Allocate CPU memory to store the image after CUDA is ready. */
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
                                   * sizeof(unsigned char));
@@ -57,21 +65,23 @@ unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
     timer memoryTime = timer("memoryTime");
 
     memoryTime.start();
-    memcpyHostToDevice(device_image_data, image_data, total_size* sizeof(unsigned char));
+    memcpyHostToDevice(device_image_data, image_data, \
+                       total_size * sizeof(unsigned char));
     memoryTime.stop();
 
     /* Start calculation on the GPU. */
     int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
     kernelTime1.start();
     greyscale_kernel<<<num_blocks, thread_block_size>>> \
-        (device_image_data, device_new_image, max_index* NUM_CHANNELS_RGB);//total_size);
+        (device_image_data, device_new_image, max_index* NUM_CHANNELS_RGB);
     cudaDeviceSynchronize();
     kernelTime1.stop();
     checkCudaCall(cudaGetLastError());
 
     /* Copy the result image back to the GPU. */
     memoryTime.start();
-    memcpyDeviceToHost(new_image_data, device_new_image, num_pixels * sizeof(unsigned char));
+    memcpyDeviceToHost(new_image_data, device_new_image, \
+                       num_pixels * sizeof(unsigned char));
     memoryTime.stop();
 
     /* Free used memory on the GPU. */

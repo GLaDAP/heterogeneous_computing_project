@@ -1,3 +1,13 @@
+/*
+ * File: greyscaleomp.cc
+ * Assignment: 5
+ * Students: Teun Mathijssen, David Puroja
+ * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Studentnumber: 11320788, 10469036
+ *
+ * Description: Applies the greyscale filter on the image using OpenMP.
+ * NOTE: malloc check needs to be checked at main.cu
+ */
 #include <stdlib.h>
 #include <iostream>
 #include <omp.h>
@@ -15,31 +25,32 @@ using namespace std;
 #define GREYSCALE_B 0.0722
 
 /* Perform a greyscale filter on an image. Return a new image data array
-containing only 1 color channel.*/
-unsigned char * filter_greyscale_omp(unsigned char *image_data,// unsigned char* &new_image,
-                                    int num_pixels,
-                                    int min_index) {
+ * containing only 1 color channel.
+*/
+unsigned char * filter_greyscale_omp(unsigned char *image_data, int num_pixels,
+                                     int min_index, int num_threads) {
 
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
                                   * sizeof(unsigned char));
     if (new_image_data == NULL) {
         cout << "Could not allocate memory" << endl;
-        exit(1);
+        return NULL;
     }
 
-    omp_set_num_threads(4);
-
+    omp_set_num_threads(num_threads);
+    int total_indices = num_pixels - min_index;
     int total_size = num_pixels * NUM_CHANNELS_RGB;
-    #pragma omp parallel for schedule( dynamic, ((total_size-min_index)/4) )
-    for(int i = min_index* NUM_CHANNELS_RGB; i < total_size; i += NUM_CHANNELS_RGB) {
+    
+    #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
+    for(int i = min_index* NUM_CHANNELS_RGB; i < total_size; \
+        i += NUM_CHANNELS_RGB) {
         int j = i / NUM_CHANNELS_RGB;
-        int greyscale_value = (image_data[i] * GREYSCALE_R
-                               + image_data[i + 1] * GREYSCALE_G
+        int greyscale_value = (image_data[i] * GREYSCALE_R \
+                               + image_data[i + 1] * GREYSCALE_G \
                                + image_data[i + 2] * GREYSCALE_B);
 
         new_image_data[j] = greyscale_value;
     }
     #pragma omp barrier
     return new_image_data;
-    // new_image = new_image_data;
 }

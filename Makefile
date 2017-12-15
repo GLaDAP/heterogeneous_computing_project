@@ -10,7 +10,7 @@ NVCCFLAGS	:= -O3 -g --ptxas-options=-v \
 			  -gencode arch=compute_50,code=compute_50 \
 			  -gencode arch=compute_50,code=sm_50
 
-			  # -gencode arch=compute_30,code=compute_30
+			  # -gencode arch=compute_30,code=compute_30 \
 			  # -gencode arch=compute_30,code=sm_30
 
 CFLAGS		= -O3 -g3 -Wall -g -Werror -fopenmp
