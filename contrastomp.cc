@@ -33,6 +33,7 @@ void filter_contrast_omp(unsigned char *image_data, int num_pixels,
         brightness_sum += image_data[i];
     }
     #pragma omp barrier
+    cout << "Brightness OMP: " << brightness_sum << endl;
 
     float brightness_mean = (double) brightness_sum / (double) num_pixels;
     float denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
