@@ -6,7 +6,10 @@
  * Studentnumber: 11320788, 10469036
  *
  * Description: Calculates the sum of brightness of the image using CUDA
- *              reduction. Returns the sum of the brightness.
+ *              reduction. Returns the sum of the brightness. This program uses
+ *              the __shfl_down() functionwhich is only available on
+ *              Nvidia GPUs with a compute capability of 3.0 or higher.
+ *
  */
 #include <stdbool.h>
 #include <stdlib.h>
@@ -16,10 +19,14 @@
 
 using namespace std;
 
-
+/* Brightness reduction kernel. Calculates the sum of the brightness of all the
+ * pixels until a given index. This function uses the __shfl_down() function
+ * which is only available on Nvidia GPUs with a compute capability of 3.0 or
+ * higher.
+ */
 __global__ void brightness_reduction_kernel(unsigned char *data, int size,
                                             unsigned long long int* result) {
-    unsigned long long int sum = 0;
+    int sum = 0;
     unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
 
     for(unsigned int i = index; i < index + 4 && i < size; i++) {
@@ -30,7 +37,7 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
      * warp contains 32 threads, the shuffle-down operation starts at 16.
      */
     for(int i = 16; i > 0; (i >>= 1)){
-        sum += __shfl_down(sum, i);
+        sum += __shfl_down(sum, i, 32);
     }
 
     /* Add all the sums of the warps within the block to one variable. */
@@ -47,17 +54,27 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
     }
 }
 
-unsigned long long int calculate_brightness_cuda(unsigned char *device_image,
-                                                 int num_pixels,
+/* Calculates the brightness of the picture used by the contrast filter.
+ * This function copies the image into the GPU memory and times the duration
+ * of the operations. Returns a unsigned long long int to prevent wrap around
+ * when large images are used in the calculation.
+ */
+unsigned long long int calculate_brightness_cuda(unsigned char *image_data,
+                                                 int num_pixels, int max_index,
                                                  int thread_block_size) {
-
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
+
+    unsigned char* device_image = (unsigned char*) allocateDeviceMemory( \
+        num_pixels * sizeof (unsigned char));
+    memcpyHostToDevice(device_image, image_data, \
+                       num_pixels * sizeof(unsigned char));
 
     unsigned long long int brightness_sum;
     unsigned long long int* device_brightness_sum = (unsigned long long int*) \
         allocateDeviceMemory(sizeof (unsigned long long int));
     unsigned long long int zero[] = {0};
+
     /* Initialize the timers used to measure the kernel invocation time and
      * memory transfer time.
      */
@@ -66,10 +83,10 @@ unsigned long long int calculate_brightness_cuda(unsigned char *device_image,
                        sizeof (unsigned long long int));
     memoryTime.stop();
 
-    int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
+    int num_blocks = (max_index + thread_block_size - 1) / thread_block_size;
     kernelTime1.start();
     brightness_reduction_kernel<<<num_blocks, thread_block_size>>> \
-        (device_image, num_pixels, device_brightness_sum);
+        (device_image, max_index, device_brightness_sum);
     cudaDeviceSynchronize();
     kernelTime1.stop();
     checkCudaCall(cudaGetLastError());
@@ -80,6 +97,9 @@ unsigned long long int calculate_brightness_cuda(unsigned char *device_image,
     memoryTime.stop();
     cout << "Brightness cuda: " << brightness_sum << endl;
     freeDeviceMemory(device_brightness_sum);
+    freeDeviceMemory(device_image);
+
+    /* Print the elapsed time. */
     cout << fixed << setprecision(6);
     cout << "brightness (kernel): \t\t" << kernelTime1.getElapsed() \
           << " seconds." << endl;

@@ -6,7 +6,6 @@
  * Studentnumber: 11320788, 10469036
  *
  * Description: Applies the greyscale filter on the image using OpenMP.
- * NOTE: malloc check needs to be checked at main.cu
  */
 #include <stdlib.h>
 #include <iostream>
@@ -27,20 +26,24 @@ using namespace std;
 /* Perform a greyscale filter on an image. Return a new image data array
  * containing only 1 color channel.
 */
-unsigned char * filter_greyscale_omp(unsigned char *image_data, int num_pixels,
-                                     int min_index, int num_threads) {
+void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
+                                     int min_index, int num_threads,
+                                     unsigned char** result) {
 
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
                                   * sizeof(unsigned char));
     if (new_image_data == NULL) {
         cout << "Could not allocate memory" << endl;
-        return NULL;
+        return;
     }
 
     omp_set_num_threads(num_threads);
+    /* Since the OpenMP takes the second part of the array, the total size is
+     * equal to the picture.
+     */
     int total_indices = num_pixels - min_index;
     int total_size = num_pixels * NUM_CHANNELS_RGB;
-    
+
     #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
     for(int i = min_index* NUM_CHANNELS_RGB; i < total_size; \
         i += NUM_CHANNELS_RGB) {
@@ -52,5 +55,5 @@ unsigned char * filter_greyscale_omp(unsigned char *image_data, int num_pixels,
         new_image_data[j] = greyscale_value;
     }
     #pragma omp barrier
-    return new_image_data;
+    *result = *&new_image_data;
 }

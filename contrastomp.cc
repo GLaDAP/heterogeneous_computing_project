@@ -17,23 +17,12 @@ using namespace std;
 
 /* The maximum value we can use as RGB component. */
 #define RGB_MAX_VALUE 255
-/* Perform a contrast filter on an image. */
+
+/* Apply the contrast filter on an image. */
 void filter_contrast_omp(unsigned char *image_data, int num_pixels,
-                         int min_index, int num_threads) {
-    long brightness_sum = 0;
+                         long brightness_sum, int min_index, int num_threads) {
 
     omp_set_num_threads(num_threads);
-    /* CUDA Reduction. Brightness must be calculated first. This for loop must
-     * be removed.
-     * NOTE: TO REMOVE.
-     */
-    #pragma omp parallel for schedule (dynamic, (num_pixels / num_threads)) \
-        reduction (+:brightness_sum)
-    for (int i = 0; i < num_pixels; i++) {
-        brightness_sum += image_data[i];
-    }
-    #pragma omp barrier
-    cout << "Brightness OMP: " << brightness_sum << endl;
 
     float brightness_mean = (double) brightness_sum / (double) num_pixels;
     float denominator = sqrt(RGB_MAX_VALUE - brightness_mean);

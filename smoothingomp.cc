@@ -29,26 +29,28 @@ const int kernel[KERNEL_WIDTH * KERNEL_WIDTH] = {1, 2, 3, 2, 1,
                                                 2, 4, 6, 4, 2,
                                                 1, 2, 3, 2, 1};
 /* Perform a triangular smoothing filter on an image. */
-void filter_smoothing_omp(unsigned char *image_data, int num_pixels,
-                             int width, int height, int min_index, int num_threads) {
+void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
+                          int height, int min_index, int num_threads) {
+
     unsigned char *temp_image_data = (unsigned char *) malloc(num_pixels);
     if (temp_image_data == NULL) {
         cout << "Could not allocate memory in smoothin function." << endl;
         exit(1);
     }
+
     memcpy(temp_image_data, image_data, num_pixels);
     omp_set_num_threads(num_threads);
     int total_indices = num_pixels - min_index;
 
     /* OpenMP since the IF-statement is too complex */
     #pragma omp parallel for schedule(dynamic, (total_indices / num_threads))
-    for(int i = min_index; i < num_pixels; i++) {
+    for (int i = min_index; i < num_pixels; i++) {
 
         int col = i % width;
         int row = i / width;
 
         /* Boundary check for the current kernel center. */
-        if(!(row < KERNEL_OFFSET || col < KERNEL_OFFSET
+        if (!(row < KERNEL_OFFSET || col < KERNEL_OFFSET
            || row > (height - KERNEL_OFFSET)
            || col > (width - KERNEL_OFFSET))) {
             int accumulator = 0;

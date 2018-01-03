@@ -39,9 +39,10 @@ __global__ void greyscale_kernel(unsigned char* image_data, \
     }
 }
 
-/**/
-unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
-                                      int max_index, int thread_block_size) {
+/* Function which applies a greyscale filter on the image using CUDA. */
+void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
+                                      int max_index, int thread_block_size,
+                                      unsigned char** result) {
     /* Allocate CPU memory to store the image after CUDA is ready. */
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
                                   * sizeof(unsigned char));
@@ -52,9 +53,11 @@ unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
     /* Total pixels in the image data array. */
     int total_size = num_pixels * NUM_CHANNELS_RGB;
 
+    /* Copy the image to the device and the array where the resulting image
+     * is
+     */
     unsigned char* device_new_image = (unsigned char*) allocateDeviceMemory( \
         num_pixels * sizeof (unsigned char));
-
     unsigned char* device_image_data = (unsigned char*) allocateDeviceMemory( \
         total_size * sizeof (unsigned char));
 
@@ -88,10 +91,11 @@ unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
     freeDeviceMemory(device_new_image);
     freeDeviceMemory(device_image_data);
 
+    /* Print the elapsed time. */
     cout << fixed << setprecision(6);
     cout << "Greyscale (kernel): \t\t" << kernelTime1.getElapsed() \
          << " seconds." << endl;
     cout << "Greyscale (memory): \t\t" << memoryTime.getElapsed() \
          << " seconds." << endl;
-    return new_image_data;
+    *result = *&new_image_data;
 }

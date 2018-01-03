@@ -9,7 +9,9 @@
  */
 #pragma once
 
-unsigned char * filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
-                                      int max_index, int thread_block_size);
-unsigned char * filter_greyscale_omp(unsigned char *image_data, int num_pixels,
-                                     int min_index, int num_threads);
+void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
+                           int max_index, int thread_block_size,
+                           unsigned char** result);
+void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
+                          int min_index, int num_threads,
+                          unsigned char** result);
