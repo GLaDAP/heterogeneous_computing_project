@@ -38,7 +38,7 @@ __global__ void smoothing_kernel(unsigned char* image_data,
     int row = i / width;
 
     /* Boundary check for the current kernel center. */
-    if(i < num_pixels && !(row < KERNEL_OFFSET || col < KERNEL_OFFSET ||
+    if (i < num_pixels && !(row < KERNEL_OFFSET || col < KERNEL_OFFSET ||
          row > (height - KERNEL_OFFSET) || col > (width - KERNEL_OFFSET))) {
         int accumulator = 0;
         for (int kernel_index = 0; kernel_index < KERNEL_SIZE; kernel_index++) {

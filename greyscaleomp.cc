@@ -31,7 +31,7 @@ void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
                                      unsigned char** result) {
 
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
-                                  * sizeof(unsigned char));
+                                  * sizeof (unsigned char));
     if (new_image_data == NULL) {
         cout << "Could not allocate memory" << endl;
         return;
@@ -45,7 +45,7 @@ void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
     int total_size = num_pixels * NUM_CHANNELS_RGB;
 
     #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
-    for(int i = min_index* NUM_CHANNELS_RGB; i < total_size; \
+    for (int i = min_index* NUM_CHANNELS_RGB; i < total_size; \
         i += NUM_CHANNELS_RGB) {
         int j = i / NUM_CHANNELS_RGB;
         int greyscale_value = (image_data[i] * GREYSCALE_R \
