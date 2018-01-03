@@ -42,7 +42,9 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
     omp_set_num_threads(num_threads);
     int total_indices = num_pixels - min_index;
 
-    /* OpenMP since the IF-statement is too complex */
+    timer ompTime = timer("omptime");
+    ompTime.start();
+
     #pragma omp parallel for schedule(dynamic, (total_indices / num_threads))
     for (int i = min_index; i < num_pixels; i++) {
 
@@ -68,6 +70,12 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
         }
     }
     #pragma omp barrier
+    ompTime.stop();
+
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "smoothing (OMP): \t\t" << ompTime.getElapsed() \
+          << " seconds." << endl;
 
     free(temp_image_data);
 }

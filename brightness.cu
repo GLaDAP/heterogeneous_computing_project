@@ -95,7 +95,6 @@ unsigned long long int calculate_brightness_cuda(unsigned char *image_data,
     memcpyDeviceToHost(&brightness_sum, device_brightness_sum,
                        sizeof (unsigned long long int));
     memoryTime.stop();
-    cout << "Brightness cuda: " << brightness_sum << endl;
     freeDeviceMemory(device_brightness_sum);
     freeDeviceMemory(device_image);
 
