@@ -39,11 +39,12 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
     }
 
     memcpy(temp_image_data, image_data, num_pixels);
+
     omp_set_num_threads(num_threads);
     int total_indices = num_pixels - min_index;
 
-    timer ompTime = timer("omptime");
-    ompTime.start();
+    timer ompTimeSmooth = timer("omptime");
+    ompTimeSmooth.start();
 
     #pragma omp parallel for schedule(dynamic, (total_indices / num_threads))
     for (int i = min_index; i < num_pixels; i++) {
@@ -52,8 +53,8 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
         int row = i / width;
 
         /* Boundary check for the current kernel center. */
-        if (!(row < KERNEL_OFFSET || col < KERNEL_OFFSET
-           || row > (height - KERNEL_OFFSET)
+        if (!(row < KERNEL_OFFSET || col < KERNEL_OFFSET \
+           || row > (height - KERNEL_OFFSET) \
            || col > (width - KERNEL_OFFSET))) {
             int accumulator = 0;
             for (int kernel_index = 0; kernel_index < 25; kernel_index++) {
@@ -70,11 +71,11 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
         }
     }
     #pragma omp barrier
-    ompTime.stop();
+    ompTimeSmooth.stop();
 
     /* Print elapsed parallel time. */
     cout << fixed << setprecision(6);
-    cout << "smoothing (OMP): \t\t" << ompTime.getElapsed() \
+    cout << "smoothing (OMP): \t\t" << ompTimeSmooth.getElapsed() \
           << " seconds." << endl;
 
     free(temp_image_data);

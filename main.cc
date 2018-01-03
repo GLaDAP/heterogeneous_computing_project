@@ -223,20 +223,14 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    cout << "GPU workload (percentage): " << workload_gpu << endl;
+    cout << "GPU workload (percentage): " << workload_gpu << \
+    " Number of threads OMP: " << num_threads << " BlockSize CUDA: " \
+    << block_size << endl;
 
-    timer progTime = timer("programtime");
-    progTime.start();
     if (!process_image(file_in, file_out, workload_gpu, block_size,
         num_threads)) {
             return EXIT_FAILURE;
     }
-    progTime.stop();
-
-    /* Print elapsed parallel time. */
-    cout << fixed << setprecision(6);
-    cout << "Total Program time: \t\t" << progTime.getElapsed() \
-          << " seconds." << endl;
 
     return EXIT_SUCCESS;
 }
