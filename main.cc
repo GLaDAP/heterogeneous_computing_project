@@ -5,10 +5,11 @@
  * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
  * Studentnumber: 11320788, 10469036
  *
- * USAGE:       ./rgb2grey source.jpg output.png num_blocks num_threads
+ * USAGE:       ./assign_5 source.jpg output.png num_blocks num_threads
  *              workload_gpu[0-100]
  *
  * NOTE:        This program can only load 3-channel image files.
+ * NOTE:        When running on the DAS4, the gcc/4.8.2 module must be added.
  *
  * Description: This file contains functions to apply greyscale, contrast and
  *              smoothing filters on a given image. The image must be an image
@@ -178,7 +179,7 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
     /* Only time when the filters are applied. */
     timer progTimer = timer("programtimer");
     progTimer.start();
-    
+
     unsigned char* temp = apply_grey_filter(image_data, num_pixels,
                                             gpu_end_index, cpu_start_index,
                                             block_size, num_threads);

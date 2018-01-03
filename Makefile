@@ -22,19 +22,29 @@ CU_OBJECTS	= $(CU_SOURCES:%.cu=%.o)
 CU_PTX		= $(CU_SOURCES:%.cu=%.ptx)
 CC_OBJECTS	= $(CC_SOURCES:%.cc=%.o)
 
-# -std=c++11 used to use thread header of C++ library.
+# -std=c++11 used to use thread header of C++ library. On the DAS4, it requires
+# the gcc/4.8.2 module to be added.
 CC			:= g++
 NVCC		:= nvcc
 LINKER		:= g++ -std=c++11
 
-all: clean rgb2grey
+all: clean assign_5
 
-rgb2grey: $(CU_SOURCES) $(CC_SOURCES)
+assign_5: $(CU_SOURCES) $(CC_SOURCES)
 	$(NVCC) -c $(CU_SOURCES) $(NVCCFLAGS) $(INCLUDES)
-	$(LINKER) -o $(PROJ_BASE)/rgb2grey $(CU_OBJECTS) $(CC_SOURCES) $(INCLUDES) \
+	$(LINKER) -o $(PROJ_BASE)/assign_5 $(CU_OBJECTS) $(CC_SOURCES) $(INCLUDES) \
 	$(CUDA_LIBS) $(CFLAGS) $(CUDA_LDFLAGS)
 
+#Runlocal works only on computers with configured bumblebee.
+runlocal: $(PROGNAME)
+	optirun $(PROJ_BASE)/assign_5 kit0.jpg kit_res.png 512 4 90
+
+# Run on the DAS4 with test-image of the cat.
+run: $(PROGNAME)
+	prun -v -np 1 -native '-l fat,gpu=K20' $(PROJ_BASE)/assign_5 kit0.jpg \
+	kit_res.png 512 4 90
+
 clean:
-		rm -fv $(PROGNAME) $(TARNAME) rgb2grey main.o greyscale.o smoothing.o \
+		rm -fv $(PROGNAME) $(TARNAME) assign_5 main.o greyscale.o smoothing.o \
 		contrast.o timer.o contrastomp.o greyscaleomp.o smoothingomp.o \
 		cuda_helper.o brightness.o brightnessomp.o file.o
