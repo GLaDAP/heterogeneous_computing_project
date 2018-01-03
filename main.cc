@@ -163,7 +163,7 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
     int width, height, num_channels;
 
     unsigned char *image_data = open_rgb_image(file_in, &width, &height,
-                                           &num_channels);
+                                               &num_channels);
     /* We stop processing if the image is invalid or we don't get the
     specific amount of channels we want. */
     if (!check_image(image_data, num_channels))
@@ -227,10 +227,18 @@ int main(int argc, char *argv[]) {
     " Number of threads OMP: " << num_threads << " BlockSize CUDA: " \
     << block_size << endl;
 
+    timer progTimer = timer("programtimer");
+    progTimer.start();
     if (!process_image(file_in, file_out, workload_gpu, block_size,
         num_threads)) {
             return EXIT_FAILURE;
     }
+    progTimer.stop();
+
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "Program Timer: \t\t" << progTimer.getElapsed() \
+          << " seconds." << endl;
 
     return EXIT_SUCCESS;
 }
