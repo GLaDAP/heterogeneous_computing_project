@@ -12,7 +12,6 @@
 #include <iostream>
 #include "timer.h"
 #include "cuda_helper.h"
-#include "brightness.h"
 
 using namespace std;
 
@@ -20,7 +19,11 @@ using namespace std;
 #define RGB_MAX_VALUE 255
 
 /* CUDA contrast filter kernel. Calculates for each pixel in its range the
- * new value using the mean and denominator of the brightness sum.
+ * new value using the mean and denominator of the brightness sum. This kernel
+ * executes in two steps: the first step are the threads with a pixel which
+ * satisfies the requirement of the second if-statement. The second stage is the
+ * else. This is due the architecture of the GPU where all the threads in a warp
+ * executes the same instruction.
  */
 __global__ void filter_contrast_kernel(unsigned char *image_data, int size,
                                        double mean, double denominator) {
@@ -40,22 +43,21 @@ __global__ void filter_contrast_kernel(unsigned char *image_data, int size,
  * and executes the kernel.
  */
 void filter_contrast_cuda(unsigned char *image_data, int num_pixels,
-                          int max_index, int thread_block_size) {
+                          long brightness_sum, int max_index,
+                          int thread_block_size) {
     timer kernelTime1 = timer("kernelTime");
     timer memoryTime = timer("memoryTime");
 
+    /* Copy the image to the device. */
     unsigned char* device_image = (unsigned char*) allocateDeviceMemory( \
         num_pixels * sizeof (unsigned char));
     memcpyHostToDevice(device_image, image_data, \
                        num_pixels * sizeof(unsigned char));
 
-    unsigned long long int brightness_sum = calculate_brightness_cuda(device_image, num_pixels, \
-                                                   thread_block_size);
-    int num_blocks = (num_pixels + thread_block_size - 1) / thread_block_size;
-
-    /* And now the contrast */
     double brightness_mean = (double) (brightness_sum / (double) num_pixels);
     double denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
+
+    int num_blocks = (max_index + thread_block_size - 1) / thread_block_size;
 
     kernelTime1.start();
     filter_contrast_kernel<<<num_blocks, thread_block_size>>> \
@@ -72,6 +74,8 @@ void filter_contrast_cuda(unsigned char *image_data, int num_pixels,
 
     /* Free used memory on the GPU. */
     freeDeviceMemory(device_image);
+
+    /* Print the elapsed time. */
     cout << fixed << setprecision(6);
     cout << "contrast (kernel): \t\t" << kernelTime1.getElapsed() \
           << " seconds." << endl;

@@ -91,7 +91,6 @@ void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
         (device_image, device_temp_image, device_kernel_array, max_index, \
          width, height);
     kernelTime1.stop();
-
     checkCudaCall(cudaGetLastError());
 
     /* Copy the result back to the host. Only the pixels actually calculated
@@ -105,6 +104,7 @@ void filter_smoothing_cuda(unsigned char *image_data, int num_pixels,
     freeDeviceMemory(device_image);
     freeDeviceMemory(device_kernel_array);
 
+    /* Print the elapsed time. */
     cout << fixed << setprecision(6);
     cout << "smoothing (kernel): \t\t" << kernelTime1.getElapsed() \
          << " seconds." << endl;

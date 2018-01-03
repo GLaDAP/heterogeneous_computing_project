@@ -1,9 +1,12 @@
 /*
- * File: main.cu
+ * File: main.cc
  * Assignment: 5
  * Students: Teun Mathijssen, David Puroja
  * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
  * Studentnumber: 11320788, 10469036
+ *
+ * USAGE:       ./rgb2grey source.jpg output.png workload_gpu[0-100] num_blocks
+ *              num_threads
  *
  * Description: This file contains functions to apply greyscale, contrast and
  *              smoothing filters on a given image. The image must be an image
@@ -19,21 +22,16 @@
  *                            \--> OpenMP --> /
  *
  *              When the filters are applied, an PNG image is saved to disk.
- *
- * TODO: Combining brightness reduction functions. NOTE: CUDA brightness
- *       reduction uses the same array for the contrast.
  */
 
-#include <cstdbool>
 #include <cstdlib>
 #include <iostream>
-#include <thread> //Used for threads
-#include <future> //used for async, since greyscale has a return value.
+#include <thread>
 #include "greyscale.h"
 #include "contrast.h"
 #include "smoothing.h"
 #include "timer.h"
-// #include "cuda_helper.h"
+#include "brightness.h"
 #include "file.h"
 
 using namespace std;
@@ -43,12 +41,12 @@ using namespace std;
 #define NUM_CHANNELS_RGB 3
 #define NUM_CHANNELS_GREYSCALE 1
 
-/* Check whether two arguments are supplied. */
+/* Check whether enough arguments are supplied. */
 int check_argc(int argc) {
     if (argc != 6) {
         cout << "Error: wrong argument count.\n";
         cout << "Usage: ./main input_file output_file workload_gpu "<< \
-        "(0-100 with increment of 10) num_blocks num_threads\n";
+        "(between 0 and 100) num_blocks num_threads\n";
 
         return false;
     }
@@ -76,15 +74,18 @@ unsigned char* apply_grey_filter(unsigned char* image_data, int num_pixels,
                       int num_threads) {
 
     cout << "Greyscale filter" << endl;
-    /* Calculate the filter in parallel by using separate threads. */
-    auto cuda_con = std::async(filter_greyscale_cuda, image_data, num_pixels, \
-                               gpu_end_index, block_size);
-    auto omp_con = std::async(filter_greyscale_omp, image_data, num_pixels, \
-                              cpu_start_index, num_threads);
+    unsigned char *temp_image_data_cuda;
+    unsigned char *temp_image_data_omp;
 
-    /* Retrieve the values of the proceses. */
-    unsigned char *temp_image_data_cuda = cuda_con.get();
-    unsigned char *temp_image_data_omp = omp_con.get();;
+    /* Calculate the filter in parallel by using separate threads. */
+    std::thread cuda_con (filter_greyscale_cuda, image_data, num_pixels, \
+                          gpu_end_index, block_size, &temp_image_data_cuda);
+    std::thread omp_con (filter_greyscale_omp, image_data, num_pixels, \
+                         cpu_start_index, num_threads, &temp_image_data_omp);
+
+    /* Wait for the processes to finish. */
+    cuda_con.join();
+    omp_con.join();
 
     /* Copy both results into one array for further calculation. */
     memcpy(temp_image_data_omp, temp_image_data_cuda, \
@@ -93,22 +94,24 @@ unsigned char* apply_grey_filter(unsigned char* image_data, int num_pixels,
 }
 
 /* Apply the contrast filter using two threads: one for CUDA and one for
- * OpenMP. TODO: Allocate GPU-memory in the main function so it can be used for
- * brightness, contrast and smoothing.
+ * OpenMP.
  */
 void apply_contrast_filter(unsigned char* image_data,
                            unsigned char* image_data2, int num_pixels,
                            int gpu_end_index, int cpu_start_index,
-                           int block_size, int num_threads) {
+                           long brightness, int block_size, int num_threads) {
 
     cout << "Contrast filter" << endl;
     memcpy(image_data2, image_data, num_pixels * sizeof (unsigned char));
     std::thread cuda_con (filter_contrast_cuda, image_data2, num_pixels, \
-                          gpu_end_index, block_size);
+                          brightness, gpu_end_index, block_size);
     std::thread omp_con (filter_contrast_omp, image_data, num_pixels, \
-                         cpu_start_index, num_threads);
+                         brightness, cpu_start_index, num_threads);
+
+    /* Wait for the processes to finish. */
     cuda_con.join();
     omp_con.join();
+    /* Copy the images from both processes to one image array. */
     memcpy(image_data, image_data2, gpu_end_index * sizeof (unsigned char));
     memcpy(image_data2, image_data, num_pixels * sizeof (unsigned char));
 }
@@ -127,10 +130,27 @@ void apply_smoothing_filter(unsigned char* image_data,
                        height, gpu_end_index, block_size);
     std::thread omp_con (filter_smoothing_omp, image_data, num_pixels, width,
                         height, cpu_start_index, num_threads);
+
+    /* Wait for the processes to finish. */
     cuda_con.join();
     omp_con.join();
+
     memcpy(image_data, image_data2, gpu_end_index * sizeof (unsigned char));
     free(image_data2);
+}
+
+/* Calculate the brightness used by the contrast filter with CUDA and OpenMP.
+ */
+long calculate_brightness(unsigned char* image_data, int num_pixels,
+                          int cpu_index, int gpu_index, int num_threads,
+                          int block_size) {
+    long brightness_sum;
+    long brightness_omp = calculate_brightness_omp(image_data, num_pixels,
+                                                   num_threads, cpu_index);
+    long brightness_cuda = calculate_brightness_cuda(image_data, num_pixels,
+                                                     gpu_index, block_size);
+    brightness_sum = brightness_omp + brightness_cuda;
+    return brightness_sum;
 }
 
 /* Process the entire image. Return true on success, false on failure. */
@@ -163,8 +183,15 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
         cout << "Could not allocate memory (malloc) in process image." << endl;
         return false;
     }
+
+    /* First calculate the brightness, then apply the contrast filter. */
+    long brightness = calculate_brightness(image_data, num_pixels,
+                                           cpu_start_index, gpu_end_index,
+                                           num_threads, block_size);
+
     apply_contrast_filter(image_data, image_data2, num_pixels, gpu_end_index,
-                          cpu_start_index, block_size, num_threads);
+                          cpu_start_index, brightness, block_size, num_threads);
+
     apply_smoothing_filter(image_data, image_data2, num_pixels, width, height,
                            gpu_end_index, cpu_start_index, block_size,
                            num_threads);
@@ -187,7 +214,7 @@ int main(int argc, char *argv[]) {
     int workload_gpu = atoi(argv[5]);
     /* Checks if the workload parameter is within the correct interval. */
     if (workload_gpu > 100 || workload_gpu < 0){
-        cout << "Workload must be an increment of 10" << endl;
+        cout << "GPU-workload must be between 0 and 100." << endl;
         return EXIT_FAILURE;
     }
 

@@ -7,9 +7,9 @@
  *
  * Description: Applies the contrast filter on the image using CUDA and OpenMP.
  */
-#pragma once
 
 void filter_contrast_omp(unsigned char *image_data, int num_pixels,
-                         int min_index, int num_threads);
+                         long brightness, int min_index, int num_threads);
 void filter_contrast_cuda(unsigned char *image_data, int num_pixels,
-                          int max_index, int thread_block_size);
+                          long brightness, int max_index,
+                          int thread_block_size);
