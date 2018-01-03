@@ -28,8 +28,8 @@ using namespace std;
 __global__ void filter_contrast_kernel(unsigned char *image_data, int size,
                                        double mean, double denominator) {
     unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x);
-    if(index < size) {
-        if(image_data[index] >= mean) {
+    if (index < size) {
+        if (image_data[index] >= mean) {
             image_data[index] = (sqrt(image_data[index] - mean)
                               / denominator * RGB_MAX_VALUE);
         }
@@ -52,7 +52,7 @@ void filter_contrast_cuda(unsigned char *image_data, int num_pixels,
     unsigned char* device_image = (unsigned char*) allocateDeviceMemory( \
         num_pixels * sizeof (unsigned char));
     memcpyHostToDevice(device_image, image_data, \
-                       num_pixels * sizeof(unsigned char));
+                       num_pixels * sizeof (unsigned char));
 
     double brightness_mean = (double) (brightness_sum / (double) num_pixels);
     double denominator = sqrt(RGB_MAX_VALUE - brightness_mean);

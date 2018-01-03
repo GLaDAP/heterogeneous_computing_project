@@ -45,7 +45,7 @@ void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
                                       unsigned char** result) {
     /* Allocate CPU memory to store the image after CUDA is ready. */
     unsigned char *new_image_data = (unsigned char *) malloc(num_pixels \
-                                  * sizeof(unsigned char));
+                                  * sizeof (unsigned char));
     if (new_image_data == NULL) {
         cout << "Could not allocate memory" << endl;
         exit(1);
@@ -69,7 +69,7 @@ void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
 
     memoryTime.start();
     memcpyHostToDevice(device_image_data, image_data, \
-                       total_size * sizeof(unsigned char));
+                       total_size * sizeof (unsigned char));
     memoryTime.stop();
 
     /* Start calculation on the GPU. */
@@ -84,7 +84,7 @@ void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
     /* Copy the result image back to the GPU. */
     memoryTime.start();
     memcpyDeviceToHost(new_image_data, device_new_image, \
-                       num_pixels * sizeof(unsigned char));
+                       num_pixels * sizeof (unsigned char));
     memoryTime.stop();
 
     /* Free used memory on the GPU. */

@@ -177,7 +177,7 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
     image_data = temp;
 
     unsigned char* image_data2 = (unsigned char*) malloc(num_pixels \
-                                  * sizeof(unsigned char));
+                                  * sizeof (unsigned char));
     if (image_data2 == NULL) {
         free_image(image_data);
         cout << "Could not allocate memory (malloc) in process image." << endl;

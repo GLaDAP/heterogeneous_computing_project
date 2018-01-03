@@ -29,14 +29,14 @@ __global__ void brightness_reduction_kernel(unsigned char *data, int size,
     int sum = 0;
     unsigned int index = (blockIdx.x * blockDim.x + threadIdx.x) * 4;
 
-    for(unsigned int i = index; i < index + 4 && i < size; i++) {
+    for (unsigned int i = index; i < index + 4 && i < size; i++) {
         sum += int(data[i]);
     }
     /* Shuffle down. Shifts the register by adding the sum of the half of the
      * threads to the other half until one thread contains the sum. Since a
      * warp contains 32 threads, the shuffle-down operation starts at 16.
      */
-    for(int i = 16; i > 0; (i >>= 1)){
+    for (int i = 16; i > 0; (i >>= 1)){
         sum += __shfl_down(sum, i, 32);
     }
 
@@ -68,7 +68,7 @@ unsigned long long int calculate_brightness_cuda(unsigned char *image_data,
     unsigned char* device_image = (unsigned char*) allocateDeviceMemory( \
         num_pixels * sizeof (unsigned char));
     memcpyHostToDevice(device_image, image_data, \
-                       num_pixels * sizeof(unsigned char));
+                       num_pixels * sizeof (unsigned char));
 
     unsigned long long int brightness_sum;
     unsigned long long int* device_brightness_sum = (unsigned long long int*) \
