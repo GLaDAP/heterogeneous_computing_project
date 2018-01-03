@@ -5,17 +5,21 @@
  * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
  * Studentnumber: 11320788, 10469036
  *
- * USAGE:       ./assign_5 source.jpg output.png num_blocks num_threads
- *              workload_gpu[0-100]
+ * USAGE:       ./assign_5 source output.png blocksize num_threads
+ *              workload_gpu[1-100]
  *
- * NOTE:        This program can only load 3-channel image files.
+ * NOTE:        This program can load a wide variety of images, but also fails
+ *              to load many types of images. At least 3-channel,
+ *              24-bit RGB-images are guaranteed to be supported. See:
+ *              https://github.com/nothings/stb/blob/master/stb_image.h
+ * NOTE:        While the input format is variable, the output format is
+ *              fixed to be PNG.
  * NOTE:        When running on the DAS4, the gcc/4.8.2 module must be added.
  *
  * Description: This file contains functions to apply greyscale, contrast and
- *              smoothing filters on a given image. The image must be an image
- *              with 3 RGB channels.
+ *              smoothing filters on a given image.
  *
- *              The image is divided, by an given percentage, in two parts:
+ *              The image is divided, by a given percentage, in two parts:
  *              one part is calculated on the GPU using CUDA and the other part
  *              on the CPU using OpenMP. For each filter, the CUDA and OpenMP
  *              functions are executed in parallel using 2 threads:
@@ -24,7 +28,7 @@
  *        filter-function -->|                |--> join results -> next filter
  *                            \--> OpenMP --> /
  *
- *              When the filters are applied, an PNG image is saved to disk.
+ *              When the filters are applied, a PNG image is saved to disk.
  */
 
 #include <cstdlib>

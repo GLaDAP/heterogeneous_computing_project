@@ -7,6 +7,7 @@
  *
  * Description: Applies the smoothing filter on the image using CUDA and OpenMP.
  */
+ 
 #pragma once
 
 void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
