@@ -8,6 +8,8 @@
  * USAGE:       ./rgb2grey source.jpg output.png num_blocks num_threads
  *              workload_gpu[0-100]
  *
+ * NOTE:        This program can only load 3-channel image files.
+ *
  * Description: This file contains functions to apply greyscale, contrast and
  *              smoothing filters on a given image. The image must be an image
  *              with 3 RGB channels.
@@ -173,7 +175,10 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
     /* Divide the number of pixels over the gpu and cpu. */
     int gpu_end_index = (int) num_pixels * ((float)workload_gpu/100.0f);
     int cpu_start_index = num_pixels - (num_pixels - gpu_end_index);
-
+    /* Only time when the filters are applied. */
+    timer progTimer = timer("programtimer");
+    progTimer.start();
+    
     unsigned char* temp = apply_grey_filter(image_data, num_pixels,
                                             gpu_end_index, cpu_start_index,
                                             block_size, num_threads);
@@ -199,6 +204,11 @@ int process_image(char *file_in, char *file_out, int workload_gpu,
     apply_smoothing_filter(image_data, image_data2, num_pixels, width, height,
                            gpu_end_index, cpu_start_index, block_size,
                            num_threads);
+    progTimer.stop();
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "Program Timer: \t\t" << progTimer.getElapsed() \
+         << " seconds." << endl;
 
     write_grey_png(file_out, width, height, image_data);
     free_image(image_data);
@@ -227,18 +237,12 @@ int main(int argc, char *argv[]) {
     " Number of threads OMP: " << num_threads << " BlockSize CUDA: " \
     << block_size << endl;
 
-    timer progTimer = timer("programtimer");
-    progTimer.start();
+
     if (!process_image(file_in, file_out, workload_gpu, block_size,
         num_threads)) {
             return EXIT_FAILURE;
     }
-    progTimer.stop();
 
-    /* Print elapsed parallel time. */
-    cout << fixed << setprecision(6);
-    cout << "Program Timer: \t\t" << progTimer.getElapsed() \
-          << " seconds." << endl;
 
     return EXIT_SUCCESS;
 }
