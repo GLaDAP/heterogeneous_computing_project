@@ -8,7 +8,7 @@
  * Description: Calculates the sum of brightness of the image using OpenMP
  *              reduction. Returns the sum of the brightness values.
  */
- 
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>

@@ -8,7 +8,7 @@
  * Description: File containing functions to open and save images using the STB
  *              library by Sean Barrett: https://github.com/nothings/stb
  */
- 
+
 #ifndef STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #endif

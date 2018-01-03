@@ -12,7 +12,7 @@
  *              only available on Nvidia GPUs with a compute capability of 3.0
  *              or higher.
  */
- 
+
 long calculate_brightness_omp(unsigned char *image_data, int num_pixels,
                                int num_threads, int min_index);
 

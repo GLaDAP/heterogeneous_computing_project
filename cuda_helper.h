@@ -8,7 +8,7 @@
  * Description: File containing functions used to allocate, copy and free
  *              device memory and to check is a call is succesful.
  */
- 
+
 void checkCudaCall(cudaError_t result);
 void* allocateDeviceMemory(unsigned int size);
 void freeDeviceMemory(void* pointer);

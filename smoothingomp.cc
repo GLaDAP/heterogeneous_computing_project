@@ -7,7 +7,7 @@
  *
  * Description: Applies the smoothing filter on the image using OpenMP.
  */
- 
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>

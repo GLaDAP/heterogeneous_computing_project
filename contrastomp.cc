@@ -7,7 +7,7 @@
  *
  * Description: Applies the contrast filter on the image using OpenMP.
  */
- 
+
 #include <cstdlib>
 #include <iostream>
 #include "timer.h"

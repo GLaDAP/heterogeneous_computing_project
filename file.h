@@ -8,7 +8,7 @@
  * Description: File containing functions to open and save images using the STB
  *              library by Sean Barrett: https://github.com/nothings/stb
  */
- 
+
 unsigned char * open_rgb_image(char *file_in, int* width, int* height, \
                                int* num_channels);
 void free_image (unsigned char * image);
