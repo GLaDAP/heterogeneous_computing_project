@@ -33,7 +33,7 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
                           int height, int min_index, int num_threads) {
 
     unsigned char *temp_image_data = (unsigned char *) malloc(num_pixels \
-                                   * sizeof (unsigned char));
+                                   * sizeof (unsigned char*));
     if (temp_image_data == NULL) {
         cout << "Could not allocate memory in smoothin function." << endl;
         return;
