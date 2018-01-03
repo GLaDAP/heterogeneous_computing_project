@@ -59,8 +59,12 @@ int check_argc(int argc) {
 
 /* Check whether the image is valid. */
 int check_image(unsigned char *image_data, int num_channels) {
-    if (!image_data || num_channels != NUM_CHANNELS_RGB) {
-        cout << "Error reading file.\n";
+    if (!image_data) {
+        cout << "Error reading file. No valid data pointer returned.\n";
+
+        return false;
+    } else if (num_channels != NUM_CHANNELS_RGB) {
+        cout << "Error reading file. Image does not contain 3 channels.\n";
 
         return false;
     }
