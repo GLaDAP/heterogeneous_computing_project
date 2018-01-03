@@ -5,8 +5,8 @@
  * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
  * Studentnumber: 11320788, 10469036
  *
- * USAGE:       ./rgb2grey source.jpg output.png workload_gpu[0-100] num_blocks
- *              num_threads
+ * USAGE:       ./rgb2grey source.jpg output.png num_blocks num_threads
+ *              workload_gpu[0-100]
  *
  * Description: This file contains functions to apply greyscale, contrast and
  *              smoothing filters on a given image. The image must be an image
@@ -45,8 +45,8 @@ using namespace std;
 int check_argc(int argc) {
     if (argc != 6) {
         cout << "Error: wrong argument count.\n";
-        cout << "Usage: ./main input_file output_file workload_gpu "<< \
-        "(between 0 and 100) num_blocks num_threads\n";
+        cout << "Usage: ./main input_file output_file "<< \
+        "block_size num_threads workload_gpu (between 1 and 100)\n";
 
         return false;
     }
@@ -144,12 +144,16 @@ void apply_smoothing_filter(unsigned char* image_data,
 long calculate_brightness(unsigned char* image_data, int num_pixels,
                           int cpu_index, int gpu_index, int num_threads,
                           int block_size) {
+
+    cout << "Brightness calculation" << endl;
+
     long brightness_sum;
     long brightness_omp = calculate_brightness_omp(image_data, num_pixels,
                                                    num_threads, cpu_index);
     long brightness_cuda = calculate_brightness_cuda(image_data, num_pixels,
                                                      gpu_index, block_size);
     brightness_sum = brightness_omp + brightness_cuda;
+
     return brightness_sum;
 }
 
@@ -212,15 +216,27 @@ int main(int argc, char *argv[]) {
     int block_size = atoi(argv[3]);
     int num_threads = atoi(argv[4]);
     int workload_gpu = atoi(argv[5]);
+
     /* Checks if the workload parameter is within the correct interval. */
-    if (workload_gpu > 100 || workload_gpu < 0){
-        cout << "GPU-workload must be between 0 and 100." << endl;
+    if (workload_gpu > 100 || workload_gpu < 1){
+        cout << "GPU-workload must be between 1 and 100." << endl;
         return EXIT_FAILURE;
     }
 
+    cout << "GPU workload (percentage): " << workload_gpu << endl;
+
+    timer progTime = timer("programtime");
+    progTime.start();
     if (!process_image(file_in, file_out, workload_gpu, block_size,
         num_threads)) {
             return EXIT_FAILURE;
     }
+    progTime.stop();
+
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "Total Program time: \t\t" << progTime.getElapsed() \
+          << " seconds." << endl;
+
     return EXIT_SUCCESS;
 }

@@ -28,6 +28,9 @@ void filter_contrast_omp(unsigned char *image_data, int num_pixels,
     float denominator = sqrt(RGB_MAX_VALUE - brightness_mean);
     int total_indices = num_pixels - min_index;
 
+    timer ompTime = timer("omptime");
+    ompTime.start();
+
     #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
     for (int i = min_index; i < num_pixels; i++) {
         int contrast_value = 0;
@@ -39,4 +42,10 @@ void filter_contrast_omp(unsigned char *image_data, int num_pixels,
         image_data[i] = contrast_value;
     }
     #pragma omp barrier
+    ompTime.stop();
+
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "contrast (OMP): \t\t" << ompTime.getElapsed() \
+          << " seconds." << endl;
 }

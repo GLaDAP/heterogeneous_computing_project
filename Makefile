@@ -23,9 +23,9 @@ CU_PTX		= $(CU_SOURCES:%.cu=%.ptx)
 CC_OBJECTS	= $(CC_SOURCES:%.cc=%.o)
 
 # -std=c++11 used to use thread header of C++ library.
-CC			:= g++
+CC			:= g++-5
 NVCC		:= nvcc
-LINKER		:= g++ -std=c++11
+LINKER		:= g++-5 -std=c++11
 
 all: clean rgb2grey
 

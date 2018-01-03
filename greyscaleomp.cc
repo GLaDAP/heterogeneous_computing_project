@@ -43,6 +43,8 @@ void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
      */
     int total_indices = num_pixels - min_index;
     int total_size = num_pixels * NUM_CHANNELS_RGB;
+    timer ompTime = timer("omptime");
+    ompTime.start();
 
     #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
     for (int i = min_index* NUM_CHANNELS_RGB; i < total_size; \
@@ -55,5 +57,12 @@ void filter_greyscale_omp(unsigned char *image_data, int num_pixels,
         new_image_data[j] = greyscale_value;
     }
     #pragma omp barrier
+    ompTime.stop();
+
+    /* Print elapsed parallel time. */
+    cout << fixed << setprecision(6);
+    cout << "greyscale (OMP): \t\t" << ompTime.getElapsed() \
+          << " seconds." << endl;
+
     *result = *&new_image_data;
 }
