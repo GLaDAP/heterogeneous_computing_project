@@ -7,10 +7,11 @@
  *
  * Description: Calculates the sum of brightness of the image using CUDA
  *              reduction. Returns the sum of the brightness. This program uses
- *              the __shfl_down() functionwhich is only available on
+ *              the __shfl_down() function which is only available on
  *              Nvidia GPUs with a compute capability of 3.0 or higher.
  *
  */
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>

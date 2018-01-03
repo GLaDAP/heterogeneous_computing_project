@@ -8,10 +8,11 @@
  * Description: Calculates the sum of brightness of the image using
  *              reduction on CUDA and OpenMP. Returns the sum of the brightness.
  *
- *              NOTE: The CUDA program uses the __shfl_down() functionwhich is
- *              only available onNvidia GPUs with a compute capability of 3.0
+ *              NOTE: The CUDA program uses the __shfl_down() function which is
+ *              only available on Nvidia GPUs with a compute capability of 3.0
  *              or higher.
  */
+ 
 long calculate_brightness_omp(unsigned char *image_data, int num_pixels,
                                int num_threads, int min_index);
 
