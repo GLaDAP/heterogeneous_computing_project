@@ -22,11 +22,11 @@ using namespace std;
 #define KERNEL_MULTIPLIER (1.0 / 81.0)
 
 /* Triangular smoothing kernel. */
-const int kernel_1D[KERNEL_WIDTH * KERNEL_WIDTH] = {1, 2, 3, 2, 1,
-                                                    2, 4, 6, 4, 2,
-                                                    3, 6, 9, 6, 3,
-                                                    2, 4, 6, 4, 2,
-                                                    1, 2, 3, 2, 1};
+const int kernel_1D[KERNEL_SIZE] = {1, 2, 3, 2, 1,
+                                    2, 4, 6, 4, 2,
+                                    3, 6, 9, 6, 3,
+                                    2, 4, 6, 4, 2,
+                                    1, 2, 3, 2, 1};
 
 /* Smoothing filter kernel. */
 __global__ void smoothing_kernel(unsigned char* image_data,

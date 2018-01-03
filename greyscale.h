@@ -7,7 +7,6 @@
  *
  * Description: Applies the greyscale filter on the image using CUDA and OpenMP.
  */
-#pragma once
 
 void filter_greyscale_cuda(unsigned char *image_data, int num_pixels,
                            int max_index, int thread_block_size,

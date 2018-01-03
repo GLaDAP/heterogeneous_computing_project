@@ -14,28 +14,29 @@
 #include <cstring>
 #include "timer.h"
 
-
 using namespace std;
 
 /* Kernel dimension values. */
 #define KERNEL_WIDTH 5
+#define KERNEL_SIZE KERNEL_WIDTH * KERNEL_WIDTH
 #define KERNEL_OFFSET KERNEL_WIDTH / 2
 #define KERNEL_MULTIPLIER (1.0 / 81.0)
 
 /* Triangular smoothing kernel. */
-const int kernel[KERNEL_WIDTH * KERNEL_WIDTH] = {1, 2, 3, 2, 1,
-                                                2, 4, 6, 4, 2,
-                                                3, 6, 9, 6, 3,
-                                                2, 4, 6, 4, 2,
-                                                1, 2, 3, 2, 1};
+const int kernel[KERNEL_SIZE] = {1, 2, 3, 2, 1,
+                                 2, 4, 6, 4, 2,
+                                 3, 6, 9, 6, 3,
+                                 2, 4, 6, 4, 2,
+                                 1, 2, 3, 2, 1};
 /* Perform a triangular smoothing filter on an image. */
 void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
                           int height, int min_index, int num_threads) {
 
-    unsigned char *temp_image_data = (unsigned char *) malloc(num_pixels);
+    unsigned char *temp_image_data = (unsigned char *) malloc(num_pixels \
+                                   * sizeof (unsigned char));
     if (temp_image_data == NULL) {
         cout << "Could not allocate memory in smoothin function." << endl;
-        exit(1);
+        return;
     }
 
     memcpy(temp_image_data, image_data, num_pixels);
@@ -46,7 +47,7 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
     timer ompTimeSmooth = timer("omptime");
     ompTimeSmooth.start();
 
-    #pragma omp parallel for schedule(dynamic, (total_indices / num_threads))
+    #pragma omp parallel for schedule (dynamic, (total_indices / num_threads))
     for (int i = min_index; i < num_pixels; i++) {
 
         int col = i % width;
@@ -68,6 +69,9 @@ void filter_smoothing_omp(unsigned char *image_data, int num_pixels, int width,
             }
             accumulator *= KERNEL_MULTIPLIER;
             image_data[i] = accumulator;
+        }
+        else {
+            image_data[i] = 0;
         }
     }
     #pragma omp barrier
