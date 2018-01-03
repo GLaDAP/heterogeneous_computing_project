@@ -7,7 +7,7 @@
  *
  * Description: Applies the greyscale filter on the image using OpenMP.
  */
- 
+
 #include <stdlib.h>
 #include <iostream>
 #include <omp.h>

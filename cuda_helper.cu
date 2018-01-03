@@ -8,7 +8,7 @@
  * Description: File containing functions used to allocate, copy and free
  *              device memory and to check is a call is succesful.
  */
- 
+
 #include <iostream>
 
 using namespace std;

@@ -7,7 +7,7 @@
  *
  * Description: Applies the contrast filter on the image using CUDA.
  */
- 
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <iostream>
