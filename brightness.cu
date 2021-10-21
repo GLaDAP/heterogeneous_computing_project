@@ -2,7 +2,7 @@
  * File: brightness.cu
  * Assignment: 5
  * Students: Teun Mathijssen, David Puroja
- * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Student email: teun.mathijssen@student.uva.nl, david.puroja@student.uva.nl
  * Studentnumber: 11320788, 10469036
  *
  * Description: Calculates the sum of brightness of the image using CUDA

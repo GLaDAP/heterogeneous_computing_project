@@ -2,7 +2,7 @@
  * File: smoothing.h
  * Assignment: 5
  * Students: Teun Mathijssen, David Puroja
- * Student email: teun.mathijssen@student.uva.nl, dpuroja@gmail.com
+ * Student email: teun.mathijssen@student.uva.nl, david.puroja@student.uva.nl
  * Studentnumber: 11320788, 10469036
  *
  * Description: Applies the smoothing filter on the image using CUDA and OpenMP.
